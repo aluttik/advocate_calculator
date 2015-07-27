@@ -1,9 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common import action_chains, keys
 import time
+import os
 
 
-path_to_chromedriver = '/Users/SBurns/Downloads/chromedriver'
+path_to_chromedriver = os.environ['PATH_TO_CHROMEDRIVER']
 browser = webdriver.Chrome(executable_path = path_to_chromedriver)
 
 url = "https://nginx.nimble.com/#app/contacts/view?id=5581fe938e08ab59fe6dd915"
@@ -17,8 +18,8 @@ browser.implicitly_wait(3)
 login_form_email = browser.find_element_by_id('login-f_email')
 login_form_password = browser.find_element_by_id('login-f_password')
 
-# login_form_email.clear()
-# login_form_password.clear()
+email = os.environ['NIMBLE_EMAIL']
+password = os.environ['NIMBLE_PASSWORD']
 
 ###++++++++++++BROKEN
 #fill in form
