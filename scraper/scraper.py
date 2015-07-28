@@ -1,5 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common import action_chains, keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 
@@ -10,29 +13,33 @@ browser = webdriver.Chrome(executable_path = path_to_chromedriver)
 url = "https://nginx.nimble.com/#app/contacts/view?id=5581fe938e08ab59fe6dd915"
 browser.get(url)
 
-
-
 #wait for element to appear
 browser.implicitly_wait(3)
+
 #find the element by ID
 login_form_email = browser.find_element_by_id('login-f_email')
 login_form_password = browser.find_element_by_id('login-f_password')
 
+#get login information from config variables
 email = os.environ['NIMBLE_EMAIL']
 password = os.environ['NIMBLE_PASSWORD']
 
-###++++++++++++BROKEN
 #fill in form
-#TODO: protect these with config vars... ASAP
-browser.find_element_by_id('login-f_email').send_keys(email)
-browser.find_element_by_id('login-f_password').send_keys(password)
+login_form_email.send_keys(email)
+login_form_password.send_keys(password)
 
 #find signin button and press it
 browser.find_element_by_xpath('//*[@id="login_loginButton"]').click()
-browser.implicitly_wait(3)
+
+
 
 #click on the "Pending & History" tab
-browser.find_element_by_xpath('//*[@id="all"]').click()
+all_tab = WebDriverWait(browser, 15).until(
+	EC.presence_of_element_located((By.ID, "all"))
+)
+all_tab.click()
+
+
 
 new_scraped_interactions = {}
 interaction_table = browser.find_element_by_class_name("topWidget").find_elements_by_class_name()
