@@ -7,16 +7,36 @@ import time
 import os
 
 
+def click_link(driver, text, timeout=60):
+	'''
+	description:
+	    waits for a hyperlink to be clickable, then clicks it
+		
+	input:
+        (webdriver) driver =  the web driver that's being used 
+        (string) text = the text of the link to click on
+        (int) timeout = seconds to wait before timing out (optional)
+        
+    output:
+		None
+    '''
+	wait = WebDriverWait(driver, timeout)
+	wait.until(EC.element_to_be_clickable(
+		(By.LINK_TEXT, text)
+	)).click()
+	
+#open a new chrome web driver
 path_to_chromedriver = os.environ['PATH_TO_CHROMEDRIVER']
 browser = webdriver.Chrome(executable_path = path_to_chromedriver)
 
+#go to nimble.com
 url = "https://nginx.nimble.com/#app/contacts/view?id=5581fe938e08ab59fe6dd915"
 browser.get(url)
 
-#wait for element to appear
+#wait for elements to appear
 browser.implicitly_wait(3)
 
-#find the element by ID
+#find the elements by ID
 login_form_email = browser.find_element_by_id('login-f_email')
 login_form_password = browser.find_element_by_id('login-f_password')
 
@@ -24,35 +44,28 @@ login_form_password = browser.find_element_by_id('login-f_password')
 email = os.environ['NIMBLE_EMAIL']
 password = os.environ['NIMBLE_PASSWORD']
 
-#fill in form
+#fill in login form and submit
 login_form_email.send_keys(email)
 login_form_password.send_keys(password)
+login_form_password.submit()
 
-#find signin button and press it
-browser.find_element_by_xpath('//*[@id="login_loginButton"]').click()
-
-
-
-#click on the "Pending & History" tab
-all_tab = WebDriverWait(browser, 15).until(
-	EC.presence_of_element_located((By.ID, "all"))
-)
-all_tab.click()
+#navigate to interaction list
+click_link(browser, "Pending & History")
+click_link(browser, "Show more >>")
 
 
+#new_scraped_interactions = {}
+#interaction_table = browser.find_element_by_class_name("topWidget").find_elements_by_class_name()
+#interaction = browser.find_element_by_class_name("topWidget")
+#interaction_between = interaction.find_elements_by_class_name("contact")
+#interaction_type = interaction.find
 
-new_scraped_interactions = {}
-interaction_table = browser.find_element_by_class_name("topWidget").find_elements_by_class_name()
-interaction = browser.find_element_by_class_name("topWidget")
-interaction_between = interaction.find_elements_by_class_name("contact")
-interaction_type = interaction.find
+#interaction_participants = []
+#for contact in interaction_between:
+#    interaction_participants.append(str(contact.text))
+#new_scraped_interactions["interaction_participants"] = interaction_participants
 
-interaction_participants = []
-for contact in interaction_between:
-    interaction_participants.append(str(contact.text))
-new_scraped_interactions["interaction_participants"] = interaction_participants
-
-print new_scraped_interactions
+#print new_scraped_interactions
 #scrape most recent interaction element
 #grab the most recent interaction data from the db
 #if scraped element != most recent element
