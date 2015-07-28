@@ -8,23 +8,23 @@ import os
 
 
 def click_link(driver, text, timeout=60):
-	'''
-	description:
-	    waits for a hyperlink to be clickable, then clicks it
-		
-	input:
+    '''
+    description:
+        waits for a hyperlink to be clickable, then clicks it
+
+    input:
         (webdriver) driver =  the web driver that's being used 
         (string) text = the text of the link to click on
         (int) timeout = seconds to wait before timing out (optional)
-        
+
     output:
-		None
+        None
     '''
 	wait = WebDriverWait(driver, timeout)
 	wait.until(EC.element_to_be_clickable(
 		(By.LINK_TEXT, text)
 	)).click()
-	
+
 #open a new chrome web driver
 path_to_chromedriver = os.environ['PATH_TO_CHROMEDRIVER']
 browser = webdriver.Chrome(executable_path = path_to_chromedriver)
@@ -69,7 +69,7 @@ click_link(browser, "Show more >>")
 #scrape most recent interaction element
 #grab the most recent interaction data from the db
 #if scraped element != most recent element
-    #stop
+#    stop
 #new_scraped_interactions.push(scraped_elements)
 #scroll down the page
 #scrape all interaction elements
