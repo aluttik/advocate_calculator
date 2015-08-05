@@ -5,6 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, date
+from pprint import pprint
+
 import os
 import re
 
@@ -60,8 +62,7 @@ def get_date(top_elem, css_selector):
     # if the date wasn't found, check if the text describes a time of day
     elif re.search('([0-2]?\d:[0-5]\d [apAP][mM])', date_elem.text):
         # if it does, return today
-        return str(date.today());
-    #~ else: return "not working: " + date_elem.text
+        return date.today().isoformat();
 
 # open a new chrome web driver
 path_to_chromedriver = os.environ['PATH_TO_CHROMEDRIVER']
@@ -91,15 +92,14 @@ click_link(browser, "Show more >>")
 # find the element that's displayed when the list is expanding
 busy_view = browser.find_element_by_class_name("busyView");
 
-data = {}
 submit_list = []
 # TODO: find most recent interaction
 
 table = browser.find_element_by_class_name('ContactEntitiesTable')
 
-read_count = 0
 # TODO: break when freshly loaded interactions are too old
 # TODO: loop until the last interaction read is already in database
+read_count = 0
 while read_count < 100:
 
     # when the expandable interaction list isn't expanding
@@ -116,11 +116,13 @@ while read_count < 100:
             # focus on the 'read_count'th element in the interaction list
             elem = table.find_element_by_xpath('.//tr[%d]/td/div' % read_count)
 
+            data = {}
+
             # finds the interaction's type
-            class_name = elem.get_attribute('class')
-            type_search = re.search('(.+)ContactWidget( .+)?', class_name)
-            if type_search.group(1): data['type'] = str(type_search.group(1))
-            if type_search.group(2): data['subtype'] = str(type_search.group(2))
+            class_name =
+            type_search = re.search('(.+)ContactWidget ?(.*)', class_name)
+            if type_search.group(1): data['type'] = type_search.group(1).encode('utf8')
+            if type_search.group(2): data['subtype'] = type_search.group(2).encode('utf8')
 
             # adds the interaction's date to the 'data' dictionary
             if   data['type'] == 'Event':   data['date'] = get_date(elem, '.created')
@@ -133,17 +135,17 @@ while read_count < 100:
                     f.write(element.get_attribute('innerHTML') + '\n')
 
             # adds the interaction's subject to the 'data' dictionary
-            try: data['subject'] = str(elem.find_element_by_css_selector(selector).text)
+            try: data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
             except NoSuchElementException: data['subject'] = '(no subject)'
 
             # TODO: add data['participants'][]
+            pprint(data, width=10)
+            print
 
             # append this dictionary to the neo4j submit list
             submit_list.append(data)
 
-
 # TODO: submit submit_list to neo4j somehow
-
 
 #~ new_scraped_interactions = {}
 #~ interaction_table = browser.find_element_by_class_name("topWidget").find_elements_by_class_name()
