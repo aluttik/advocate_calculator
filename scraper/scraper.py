@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, date
 from pprint import pprint
-
+from print_collection import print_collection
 import os
 import re
 
@@ -64,11 +64,39 @@ def get_date(top_elem, css_selector):
         # if it does, return today
         return date.today().isoformat();
 
-# open a new chrome web driver
+def get_other_contacts(interaction_element, popup_link):
+    '''Collects all of the contacts found in a "other contacts" popup
+
+    Parameters:
+        interaction_element (webelement) - the interaction that's being processed
+        popup_link (webelement) - a link to an "other contacts" popup
+    Returns:
+        a dictionary of all contacts found in the popup
+    '''
+    others = {}
+
+    # open and find the popup element
+    click_link(interaction_element, popup_link.text)
+    popup_element = browser.find_element_by_css_selector('body > div.nmbl-PopupWindow')
+
+    # find the contacts who have ids
+    for link in popup_element.find_elements_by_css_selector('div.content div a.contact'):
+        url = link.get_attribute('href').encode('utf8')
+        link_search = re.search('^https?://.+?\.nimble.com(.*)$', url)
+        others[link.text.encode('utf8')] = link_search.group(1)
+
+    # find the contacts who don't have ids
+    for span in popup_element.find_elements_by_css_selector('div.content div span.notMatched'):
+        others[span.text.encode('utf8')] = 'notMatched'
+
+    # close the popup element
+    interaction_element.find_element_by_css_selector('span.last').click()
+
+    return others
+
+# open a new chrome web driver and go to nimble.com
 path_to_chromedriver = os.environ['PATH_TO_CHROMEDRIVER']
 browser = webdriver.Chrome(executable_path = path_to_chromedriver)
-
-# go to nimble.com
 url = "https://nginx.nimble.com/#app/contacts/view?id=5581fe938e08ab59fe6dd915"
 browser.get(url)
 
@@ -76,11 +104,9 @@ browser.get(url)
 email = os.environ['NIMBLE_EMAIL']
 password = os.environ['NIMBLE_PASSWORD']
 
-# find the login form elements
+# find the login form elements, fill in the form, and then submit it
 login_form_email = get_when_visible(browser, (By.ID, 'login-f_email'))
 login_form_password = get_when_visible(browser, (By.ID, 'login-f_password'))
-
-# fill in the login form and submit it
 login_form_email.send_keys(email)
 login_form_password.send_keys(password)
 login_form_password.submit()
@@ -111,15 +137,15 @@ while read_count < 100:
         # read new interactions that have shown up as a result of scrolling
         currently_open = len(table.find_elements_by_tag_name('tr'))
         while read_count < currently_open:
-            read_count = read_count + 1
 
-            # focus on the 'read_count'th element in the interaction list
+            # focus on the next unread element in the interaction list
+            read_count = read_count + 1
             elem = table.find_element_by_xpath('.//tr[%d]/td/div' % read_count)
 
             data = {}
 
             # finds the interaction's type
-            class_name =
+            class_name = elem.get_attribute('class')
             type_search = re.search('(.+)ContactWidget ?(.*)', class_name)
             if type_search.group(1): data['type'] = type_search.group(1).encode('utf8')
             if type_search.group(2): data['subtype'] = type_search.group(2).encode('utf8')
@@ -132,14 +158,44 @@ while read_count < 100:
                 # logs interactions that the program wasn't prepared to handle
                 with open('unrecognized_types.log', 'a') as f:
                     f.write(class_name + ':\t')
-                    f.write(element.get_attribute('innerHTML') + '\n')
+                    f.write(elem.get_attribute('innerHTML') + '\n')
 
             # adds the interaction's subject to the 'data' dictionary
             try: data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
             except NoSuchElementException: data['subject'] = '(no subject)'
 
-            # TODO: add data['participants'][]
-            pprint(data, width=10)
+            # adds the interaction's subject to the 'data' dictionary
+            try: data['sender'] = elem.find_element_by_css_selector('.details div.gwt-HTML *').text.encode('utf8')
+            except NoSuchElementException: pass
+
+            # adds the contacts who were involved in the interaction
+            contacts = {}
+            contacts_element = elem.find_element_by_css_selector('div.ExpandedMoreContactsListWidget')
+
+            # first find all contacts who have associated urls
+            for link in contacts_element.find_elements_by_tag_name('a'):
+
+                # if the link is a contact, add it to the contacts dict
+                if link.get_attribute('class') == 'contact':
+                    url = link.get_attribute('href').encode('utf8')
+                    link_search = re.search('^https?://.+?\.nimble.com(.*)$', url)
+                    contacts[link.text.encode('utf8')] = link_search.group(1)
+
+                # if there is an "X others" link, grab contacts from that too
+                elif link.get_attribute('class') == 'gwt-Anchor':
+                    contacts.update(get_other_contacts(elem, link))
+
+            # then find all contacts who don't have associated urls
+            for span in contacts_element.find_elements_by_css_selector('span.notMatched'):
+                contacts[span.text.encode('utf8')] = 'notMatched'
+
+            if contacts: data['contacts'] = contacts
+
+            # display the data
+            print data['type'],
+            if 'subtype' in data: print data['subtype'],
+            print
+            print_collection(data, indent=4)
             print
 
             # append this dictionary to the neo4j submit list
