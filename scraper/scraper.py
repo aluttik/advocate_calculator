@@ -9,6 +9,7 @@ from pprint import pprint
 from print_collection import print_collection
 import os
 import re
+import json
 
 def click_link(driver, text, timeout=60):
     '''Waits for a hyperlink to be clickable, then clicks it.
@@ -192,40 +193,20 @@ while read_count < 100:
             if contacts: data['contacts'] = contacts
 
             # display the data
-            print data['type'],
-            if 'subtype' in data: print data['subtype'],
-            print
-            print_collection(data, indent=4)
-            print
+            #~ print data['type'],
+            #~ if 'subtype' in data: print data['subtype'],
+            #~ print_collection(data, indent=4)
+            #~ print '\n%s\n' % json.dumps(data, indent=4)
 
             # append this dictionary to the neo4j submit list
             submit_list.append(data)
 
+#~ json.dumps(submit_list, indent=4)
 # TODO: submit submit_list to neo4j somehow
+print json.dumps(submit_list, indent=4)
 
-#~ new_scraped_interactions = {}
-#~ interaction_table = browser.find_element_by_class_name("topWidget").find_elements_by_class_name()
-#~ interaction = browser.find_element_by_class_name("topWidget")
-#~ interaction_between = interaction.find_elements_by_class_name("contact")
-#~ interaction_type = interaction.find
 
-#~ interaction_participants = []
-#~ for contact in interaction_between:
-  #~ interaction_participants.append(str(contact.text))
-#~ new_scraped_interactions["interaction_participants"] = interaction_participants
-
-#~ # print new_scraped_interactions
-#~ # scrape most recent interaction element
-#~ # grab the most recent interaction data from the db
-#~ if scraped element != most recent element
-    #~ #top
-#~ new_scraped_interactions.push(scraped_elements)
-#~ # scroll down the page
-#~ # scrape all interaction elements
-
-#~ def get_data(url):
-#~
-#~
+#~ def get_data(urls):
 #~ # given a list of urls
     #~ for url in urls
         #~ dirty_data = get_data(url)
