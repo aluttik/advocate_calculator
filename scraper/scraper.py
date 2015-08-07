@@ -206,7 +206,6 @@ print json.dumps(submit_list, indent=4)
 
 # TODO: submit submit_list to neo4j somehow
 
-
 #~ def get_data(urls):
 #~ # given a list of urls
     #~ for url in urls
