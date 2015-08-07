@@ -5,8 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, date
-from pprint import pprint
-from print_collection import print_collection
+import json
 import os
 import re
 
@@ -144,11 +143,13 @@ while read_count < 100:
 
             data = {}
 
+
             # finds the interaction's type
             class_name = elem.get_attribute('class')
             type_search = re.search('(.+)ContactWidget ?(.*)', class_name)
             if type_search.group(1): data['type'] = type_search.group(1).encode('utf8')
             if type_search.group(2): data['subtype'] = type_search.group(2).encode('utf8')
+
 
             # adds the interaction's date to the 'data' dictionary
             if   data['type'] == 'Event':   data['date'] = get_date(elem, '.created')
@@ -160,13 +161,16 @@ while read_count < 100:
                     f.write(class_name + ':\t')
                     f.write(elem.get_attribute('innerHTML') + '\n')
 
+
             # adds the interaction's subject to the 'data' dictionary
             try: data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
             except NoSuchElementException: data['subject'] = '(no subject)'
 
+
             # adds the interaction's subject to the 'data' dictionary
             try: data['sender'] = elem.find_element_by_css_selector('.details div.gwt-HTML *').text.encode('utf8')
             except NoSuchElementException: pass
+
 
             # adds the contacts who were involved in the interaction
             contacts = {}
@@ -191,41 +195,19 @@ while read_count < 100:
 
             if contacts: data['contacts'] = contacts
 
-            # display the data
-            print data['type'],
-            if 'subtype' in data: print data['subtype'],
-            print
-            print_collection(data, indent=4)
-            print
 
             # append this dictionary to the neo4j submit list
             submit_list.append(data)
 
+
+# displays the data in json format
+print json.dumps(submit_list, indent=4)
+
+
 # TODO: submit submit_list to neo4j somehow
 
-#~ new_scraped_interactions = {}
-#~ interaction_table = browser.find_element_by_class_name("topWidget").find_elements_by_class_name()
-#~ interaction = browser.find_element_by_class_name("topWidget")
-#~ interaction_between = interaction.find_elements_by_class_name("contact")
-#~ interaction_type = interaction.find
 
-#~ interaction_participants = []
-#~ for contact in interaction_between:
-  #~ interaction_participants.append(str(contact.text))
-#~ new_scraped_interactions["interaction_participants"] = interaction_participants
-
-#~ # print new_scraped_interactions
-#~ # scrape most recent interaction element
-#~ # grab the most recent interaction data from the db
-#~ if scraped element != most recent element
-    #~ #top
-#~ new_scraped_interactions.push(scraped_elements)
-#~ # scroll down the page
-#~ # scrape all interaction elements
-
-#~ def get_data(url):
-#~
-#~
+#~ def get_data(urls):
 #~ # given a list of urls
     #~ for url in urls
         #~ dirty_data = get_data(url)
