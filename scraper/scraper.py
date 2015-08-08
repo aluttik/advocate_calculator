@@ -30,6 +30,12 @@ def get_element(locator, driver=browser, timeout=30):
     _is_visible = EC.visibility_of_element_located
     return wait(driver, timeout).until(_is_visible(locator))
 
+def get_type(top_elem):
+    '''finds an interaction's type'''
+    class_name = elem.get_attribute('class').encode('utf8')
+    class_name = class_name.split(' hovered')[0]
+    return re.sub('(.+)ContactWidget( ?.*)', r'\1\2', class_name)
+
 def get_date(top_elem, css_selector):
     '''Finds the date from an HTML element
 
@@ -110,25 +116,16 @@ while read_count < 100:
             elem = table.find_element_by_xpath('.//tr[%d]/td/div' % read_count)
             data = {}
 
-            # finds the interaction's type
-            class_name = elem.get_attribute('class')
-            type_search = re.search('(.+)ContactWidget( ?.*)', class_name)
-            if type_search.group(1):
-                data['type'] = type_search.group(1).encode('utf8')
-            else:
-                data['type'] = class_name
-
-            if type_search.group(2):
-                data['subtype'] = type_search.group(2).encode('utf8')
+            data['type'] = get_type(elem)
 
             # adds the interaction's date to the 'data' dictionary
-            if   data['type'] == 'Event':   data['date'] = get_date(elem, '.created')
-            elif data['type'] == 'Twitter': data['date'] = get_date(elem, '.details div:last-of-type')
-            elif data['type'] == 'Email':   data['date'] = get_date(elem, '.details div:last-of-type')
+            if   data['type'].startswith('Event'):   data['date'] = get_date(elem, '.created')
+            elif data['type'].startswith('Twitter'): data['date'] = get_date(elem, '.details div:last-of-type')
+            elif data['type'].startswith('Email'):   data['date'] = get_date(elem, '.details div:last-of-type')
             else:
                 # logs interactions that the program wasn't prepared to handle
                 with open('unrecognized_types.log', 'a') as f:
-                    f.write(class_name + ':\t')
+                    f.write(class_name + '\t')
                     f.write(elem.get_attribute('innerHTML') + '\n')
 
             # adds the interaction's subject to the 'data' dictionary
