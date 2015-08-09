@@ -14,6 +14,23 @@ import re
 path_to_chromedriver = os.environ['PATH_TO_CHROMEDRIVER']
 browser = webdriver.Chrome(executable_path = path_to_chromedriver)
 
+_date_selectors = {
+    'Event': '.created',
+    'Email': '.details div:last-of-type',
+    'Twitter': '.details div:last-of-type'
+}
+
+def get_date_selector(the_type):
+    '''finds the css selector that corresponds to an interaction's type'''
+    keys = [key for key in _date_selectors.keys() if the_type.startswith(key)]
+    try: return _date_selectors[keys[0]]
+    except IndexError: raise KeyError
+
+def log_unrecognized_type(top_elem):
+    '''logs interactions that the program wasn't prepared to handle'''
+    with open('unrecognized_types.log', 'a') as f:
+        f.write(top_elem.get_attribute('class') + '\t')
+        f.write(top_elem.get_attribute('innerHTML') + '\n')
 
 def get_element(locator, driver=browser, timeout=30):
     '''Waits until a web element is be visible, then returns it.
@@ -32,20 +49,18 @@ def get_element(locator, driver=browser, timeout=30):
 
 def get_type(top_elem):
     '''finds an interaction's type'''
-    class_name = elem.get_attribute('class').encode('utf8')
+    class_name = top_elem.get_attribute('class').encode('utf8')
     class_name = class_name.split(' hovered')[0]
     return re.sub('(.+)ContactWidget( ?.*)', r'\1\2', class_name)
 
-def get_date(top_elem, css_selector):
+def get_date(date_elem):
     '''Finds the date from an HTML element
 
     Parameters:
-        top_elem (webelement) - a parent of the date element
-        css_selector (str) - points to the element being read
+        date_elem (webelement) - contains the a date
     Returns:
         string representation of the date in ISO format
     '''
-    date_elem = top_elem.find_element_by_css_selector(css_selector)
     date_string = date_elem.text.split('-')[0]
     return parse(date_string, fuzzy=True).date().isoformat()
 
@@ -119,18 +134,19 @@ while read_count < 100:
             data['type'] = get_type(elem)
 
             # adds the interaction's date to the 'data' dictionary
-            if   data['type'].startswith('Event'):   data['date'] = get_date(elem, '.created')
-            elif data['type'].startswith('Twitter'): data['date'] = get_date(elem, '.details div:last-of-type')
-            elif data['type'].startswith('Email'):   data['date'] = get_date(elem, '.details div:last-of-type')
-            else:
-                # logs interactions that the program wasn't prepared to handle
-                with open('unrecognized_types.log', 'a') as f:
-                    f.write(class_name + '\t')
-                    f.write(elem.get_attribute('innerHTML') + '\n')
+            try:
+                selector = get_date_selector(data['type'])
+                date_elem = elem.find_element_by_css_selector(selector)
+                data['date'] = get_date(date_elem)
+            except KeyError:
+                log_unrecognized_type(elem)
+                continue
 
             # adds the interaction's subject to the 'data' dictionary
-            try: data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
-            except NoSuchElementException: data['subject'] = '(no subject)'
+            try:
+                data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
+            except NoSuchElementException:
+                data['subject'] = '(no subject)'
 
             # adds the interaction's sender to the 'data' dictionary (if relevant)
             try:
