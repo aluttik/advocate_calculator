@@ -4,7 +4,7 @@ from selenium.webdriver.common import keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.support import expected_conditions as EC
-from datetime import datetime, date
+from datetime import datetime
 from dateutil.parser import parse
 from json import dumps
 import os
@@ -74,7 +74,7 @@ def get_sender(sender_elem):
 
 def get_popup_element():
     '''waits for a popup window to appear, then returns it'''
-    return browser.get_element((By.CSS_SELECTOR, 'div.nmbl-PopupWindow'))
+    return get_element((By.CSS_SELECTOR, 'div.nmbl-PopupWindow'))
 
 def get_contacts(contacts_elem):
     '''finds all of the interaction's contacts
@@ -99,6 +99,38 @@ def get_contacts(contacts_elem):
         contacts[span.text.encode('utf8')] = 'notMatched'
     else: return contacts
 
+def read_interaction(elem):
+    '''comment'''
+    data = {}
+
+    # find the interaction's type
+    data['type'] = get_type(elem)
+
+    try:# to find the interaction's date
+        selector = get_date_selector(data['type'])
+        date_elem = elem.find_element_by_css_selector(selector)
+        data['date'] = get_date(date_elem)
+    except KeyError:
+        log_unrecognized_type(elem)
+        raise
+
+    try:# to find the interaction's subject
+        data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
+    except NoSuchElementException:
+        data['subject'] = '(no subject)'
+
+    try:# to find the interaction's contacts and/or sender
+        contacts_elem = elem.find_element_by_css_selector('.ExpandedMoreContactsListWidget')
+        contacts = get_contacts(contacts_elem)
+        if contacts: data['contacts'] = contacts
+        sender_elem = elem.find_element_by_css_selector('.details div.gwt-HTML *:only-child')
+        data['sender'] = get_sender(sender_elem)
+    except NoSuchElementException:
+        pass
+
+    return data
+
+
 # go to nimble.com
 url = "https://nginx.nimble.com/#app/contacts/view?id=5581fe938e08ab59fe6dd915"
 browser.get(url)
@@ -121,7 +153,7 @@ get_element((By.LINK_TEXT, "Show more >>")).click()
 # find the element that's displayed when the list is expanding
 busy_view = browser.find_element_by_class_name("busyView")
 
-submit_list = []
+results = []
 
 # TODO: find most recent interaction
 table = browser.find_element_by_class_name('ContactEntitiesTable')
@@ -139,44 +171,13 @@ while read_count < 100:
         while read_count < currently_open:
             # focus on the next unread element in the interaction list
             read_count = read_count + 1
-            data = {}
-
-            elem = table.find_element_by_xpath('.//tr[%d]/td/div' % read_count)
-            data['type'] = get_type(elem)
-
-            try:
-                # adds the interaction's date to the 'data' dictionary
-                selector = get_date_selector(data['type'])
-                date_elem = elem.find_element_by_css_selector(selector)
-                data['date'] = get_date(date_elem)
-            except KeyError:
-                log_unrecognized_type(elem)
-                continue
-
-            try:
-                # adds the interaction's subject to the 'data' dictionary
-                data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
-            except NoSuchElementException:
-                data['subject'] = '(no subject)'
-
-            try:
-                # adds the interaction's sender to the 'data' dictionary
-                sender_elem = elem.find_element_by_css_selector('.details div.gwt-HTML *:only-child')
-                data['sender'] = get_sender(sender_elem)
-
-                # adds the contacts who were involved in the interaction
-                contacts_elem = elem.find_element_by_css_selector('.ExpandedMoreContactsListWidget')
-                contacts = get_contacts(contacts_elem)
-                if contacts: data['contacts'] = contacts
-            except NoSuchElementException:
-                pass
-
-
-            # append this dictionary to the neo4j submit list
-            submit_list.append(data)
+            xpath = './/tr[%d]/td/div' % read_count
+            element = table.find_element_by_xpath(xpath)
+            try: results.append(read_interaction(element))
+            except KeyError: continue
 
 # displays the data in json format
-print dumps(submit_list, indent=4)
+print dumps(results, indent=4)
 
 #~ browser.close()
 
