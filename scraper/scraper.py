@@ -72,29 +72,32 @@ def get_sender(sender_elem):
     else:
         return { name : 'notMatched' }
 
-def get_contacts(top_elem):
-    '''Collects all of the contacts found in a "other contacts" popup
+def get_popup_element():
+    '''waits for a popup window to appear, then returns it'''
+    return browser.get_element((By.CSS_SELECTOR, 'div.nmbl-PopupWindow'))
+
+def get_contacts(contacts_elem):
+    '''finds all of the interaction's contacts
 
     Parameters:
-        top_elem (webelement) - the parent of the contact elements
+        contacts_elem (webelement) - the parent of the contact elements
     Returns:
         a dictionary of all contacts found in the popup
     '''
-    contact_list = {}
+    contacts = {}
     # find the contacts who have ids
-    for link in top_elem.find_elements_by_tag_name('a'):
+    for link in contacts_elem.find_elements_by_tag_name('a'):
         if link.get_attribute('class') == 'contact':
-            contact_list[link.text.encode('utf8')] = link.get_attribute('href').encode('utf8')
-        # if this is an "X others" link, add contacts from the popup it opens
+            contacts[link.text.encode('utf8')] = link.get_attribute('href').encode('utf8')
+        # if this is an "X others" link, open the popup and add its contacts
         elif link.get_attribute('class') == 'gwt-Anchor':
             link.click()
-            popup_elem = browser.find_element_by_css_selector('body > div.nmbl-PopupWindow')
-            contact_list.update(get_contacts(popup_elem))
-            top_elem.find_element_by_css_selector('span.last').click()
+            contacts.update(get_contacts(get_popup_element()))
+            contacts_elem.find_element_by_css_selector('span.last').click()
     # find the contacts who don't have ids
-    for span in top_elem.find_elements_by_css_selector('span.notMatched'):
-        contact_list[span.text.encode('utf8')] = 'notMatched'
-    return contact_list
+    for span in contacts_elem.find_elements_by_css_selector('span.notMatched'):
+        contacts[span.text.encode('utf8')] = 'notMatched'
+    else: return contacts
 
 # go to nimble.com
 url = "https://nginx.nimble.com/#app/contacts/view?id=5581fe938e08ab59fe6dd915"
@@ -159,14 +162,15 @@ while read_count < 100:
             try:
                 # adds the interaction's sender to the 'data' dictionary
                 sender_elem = elem.find_element_by_css_selector('.details div.gwt-HTML *:only-child')
-                data['sender'] = get_sender(send_elem)
+                data['sender'] = get_sender(sender_elem)
+
+                # adds the contacts who were involved in the interaction
+                contacts_elem = elem.find_element_by_css_selector('.ExpandedMoreContactsListWidget')
+                contacts = get_contacts(contacts_elem)
+                if contacts: data['contacts'] = contacts
             except NoSuchElementException:
                 pass
 
-            # adds the contacts who were involved in the interaction
-            contacts_elem = elem.find_element_by_css_selector('.ExpandedMoreContactsListWidget')
-            contacts = get_contacts(contacts_elem)
-            if contacts: data['contacts'] = contacts
 
             # append this dictionary to the neo4j submit list
             submit_list.append(data)
@@ -174,7 +178,8 @@ while read_count < 100:
 # displays the data in json format
 print dumps(submit_list, indent=4)
 
-browser.close()
+#~ browser.close()
+
 # TODO: submit submit_list to neo4j somehow
 
 
