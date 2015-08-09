@@ -64,6 +64,14 @@ def get_date(date_elem):
     date_string = date_elem.text.split('-')[0]
     return parse(date_string, fuzzy=True).date().isoformat()
 
+def get_sender(sender_elem):
+    '''finds an interaction's sender'''
+    name = sender_elem.text.encode('utf8')
+    if sender_elem.tag_name is 'a':
+        return { name : sender_elem.attribute('href').encode('utf8') }
+    else:
+        return { name : 'notMatched' }
+
 def get_contacts(top_elem):
     '''Collects all of the contacts found in a "other contacts" popup
 
@@ -128,13 +136,13 @@ while read_count < 100:
         while read_count < currently_open:
             # focus on the next unread element in the interaction list
             read_count = read_count + 1
-            elem = table.find_element_by_xpath('.//tr[%d]/td/div' % read_count)
             data = {}
 
+            elem = table.find_element_by_xpath('.//tr[%d]/td/div' % read_count)
             data['type'] = get_type(elem)
 
-            # adds the interaction's date to the 'data' dictionary
             try:
+                # adds the interaction's date to the 'data' dictionary
                 selector = get_date_selector(data['type'])
                 date_elem = elem.find_element_by_css_selector(selector)
                 data['date'] = get_date(date_elem)
@@ -142,18 +150,16 @@ while read_count < 100:
                 log_unrecognized_type(elem)
                 continue
 
-            # adds the interaction's subject to the 'data' dictionary
             try:
+                # adds the interaction's subject to the 'data' dictionary
                 data['subject'] = elem.find_element_by_css_selector('.subject').text.encode('utf8')
             except NoSuchElementException:
                 data['subject'] = '(no subject)'
 
-            # adds the interaction's sender to the 'data' dictionary (if relevant)
             try:
-                sender_elem = elem.find_element_by_css_selector('.details div.gwt-HTML *')
-                name = sender_elem.text
-                url = sender_elem.get_attribute('href') if sender_elem.tag_name is 'a' else 'notMatched'
-                data['sender'] = { name.encode('utf8') : url.encode('utf8') }
+                # adds the interaction's sender to the 'data' dictionary
+                sender_elem = elem.find_element_by_css_selector('.details div.gwt-HTML *:only-child')
+                data['sender'] = get_sender(send_elem)
             except NoSuchElementException:
                 pass
 
