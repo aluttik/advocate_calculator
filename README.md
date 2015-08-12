@@ -9,7 +9,7 @@ $ git clone https://github.com/karishay/advocate_calculator
 
 ### 2. Set up your Virtual Environment
 
-Install virtualenv. 
+Install virtualenv.
 ```bash
 $ pip install virtualenv
 ```
@@ -29,13 +29,23 @@ If you made a change to the project's dependencdies, run this in your virtual en
 ```bash
 (venv) $ pip freeze > requirements.txt
 ```
-Don't forget to deactivate your virtual environment when you're done working in the repository. To do so, simply run: 
+Don't forget to deactivate your virtual environment when you're done working in the repository. To do so, simply run:
 ```bash
 (venv) $ deactivate
-``` 
+```
 
 ### 3. Install the WebDriver for Chrome
 
 * Download the latest chromedriver release [here](https://sites.google.com/a/chromium.org/chromedriver/downloads).
-* Extract the .zip file and place the chromedriver executable in a safe location, where it will not need to move. 
-* Append the line `export PATH_TO_CHROMEDRIVER='/the/path/to/chromedriver'` to your `~/.bash_profile` or `~/.bashrc` file (where */the/path/to/* is the full path to where you placed the the chromedriver executable).
+* Extract the .zip file and place the chromedriver executable in a safe location, where it will not need to move.
+* Append the line `export PATH_TO_CHROMEDRIVER='/the/path/to/chromedriver'` to your `~/.bash_profile` or `~/.bashrc` file.
+
+### 4. Set Secrets in Environment Variables
+
+** Append the lines
+```bash
+export NIMBLE_EMAIL='<nimble_email>'
+export NIMBLE_PASSWORD='<nimble_password>'
+```
+ to your `~/.bash_profile` or `~/.bashrc` file.
+ 
