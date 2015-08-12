@@ -46,5 +46,7 @@ Append the lines
 ```bash
 export NIMBLE_EMAIL='<nimble_email>'
 export NIMBLE_PASSWORD='<nimble_password>'
+export NEO4J_USERNAME='<neo4j_username>'
+export NEO4J_PASSWORD='<neo4j_password>'
 ```
  to your `~/.bash_profile` or `~/.bashrc` file.
