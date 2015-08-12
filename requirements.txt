@@ -1,4 +1,5 @@
 dateutils==0.6.6
+py2neo==2.0.7
 python-dateutil==2.4.2
 pytz==2015.4
 selenium==2.47.1
