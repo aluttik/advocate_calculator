@@ -1,2 +1,2 @@
-# Make git ignore your virtual environment.
+# Make git ignore your local virtual environment.
 venv
