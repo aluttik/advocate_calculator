@@ -42,10 +42,9 @@ Don't forget to deactivate your virtual environment when you're done working in 
 
 ### 4. Set Secrets in Environment Variables
 
-** Append the lines
+Append the lines
 ```bash
 export NIMBLE_EMAIL='<nimble_email>'
 export NIMBLE_PASSWORD='<nimble_password>'
 ```
  to your `~/.bash_profile` or `~/.bashrc` file.
- 
