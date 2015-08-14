@@ -23,28 +23,17 @@ def create_company_node(nm, tw=None, em=None, fb=None):
 
     results = list(graph.find("Company", "name", nm))
     if results:
-        print len(results)
         comp = results[0]
-        print "Do I have properties?", comp.properties
-        #add current props to list
-        # tw_accs.extend([comp["twitter"], tw])
-        # em_accs.extend([comp["email"], em])
-        # fb_accs.extend([comp["facebook"], fb])
-        #rewrite properties as lists
-        print comp["twitter"]
-        comp["twitter"].extend(tw_accs)
-        comp["email"].extend(em_accs)
-        comp["facebook"].extend(fb_accs)
-        print "Do I have properties?", comp.properties
-
-        print "remote: I am bound?", comp.bound
+        print "node in db (outdated):", comp.properties
+        if tw and not tw in comp["twitter"]: comp["twitter"].append(tw)
+        if em and not em in comp["email"]: comp["email"].append(em)
+        if fb and not fb in comp["facebook"]: comp["facebook"].append(fb)
+        print "node in db (merged):", comp.properties
         comp.push()
     else:
         graph.create(company)
-        print "company.properties:", company.properties
-    # if company.exists() != True:
-    #     return company
+        print "local node:", company.properties
 
 
 if __name__ == '__main__':
-    test_company = create_company_node("ted", tw=sys.argv[1], em="bloop")
+    create_company_node("test", tw=sys.argv[1])
