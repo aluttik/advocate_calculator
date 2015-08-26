@@ -1,2 +1,4 @@
 # Make git ignore your local virtual environment.
 venv
+neo
+.gitignore
